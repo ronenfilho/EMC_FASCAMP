@@ -48,6 +48,17 @@ abaixo).
 
 ## Notas técnicas
 
+- **`__file__` vazio ao rodar pelo Text Editor**: `01b_visualizar_render_estudio.py`
+  e `02_geracao_dataset_sintetico.py` localizam o Script 1 na mesma pasta
+  via `__file__`. Isso funciona direto no modo headless, mas ao rodar via
+  Alt+P no Text Editor do Blender — mesmo tendo aberto o arquivo do disco
+  (não colado) — `__file__` frequentemente vem como string vazia (quirk
+  do Blender), e não `NameError`. Combinado com o Blender iniciado pelo
+  Finder/Dock usando `/` como diretório de trabalho, isso resultava em
+  tentar abrir `/01_configuracao_da_cena.py`. A função
+  `obter_diretorio_do_script()` cobre esse caso consultando
+  `bpy.data.texts[...].filepath` (o caminho real do arquivo aberto) antes
+  de cair para `os.getcwd()`.
 - **CUDA vs. Metal**: a especificação original pede GPU Compute "caso haja
   suporte a CUDA" (cenário típico com GPU NVIDIA). Nesta máquina (Mac com
   GPU Apple Silicon) o backend correto do Cycles é **METAL**, não CUDA —

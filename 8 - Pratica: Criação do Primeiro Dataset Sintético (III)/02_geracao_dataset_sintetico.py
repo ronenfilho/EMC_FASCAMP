@@ -35,11 +35,31 @@ from pathlib import Path
 import bpy
 from mathutils import Color, Euler
 
-try:
-    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-except NameError:
-    SCRIPT_DIR = os.getcwd()
+def obter_diretorio_do_script(nome_do_arquivo):
+    """Descobre a pasta onde este script está salvo em disco.
 
+    Cobre três formas de execução:
+      1. Headless (`blender --background --python arquivo.py`): `__file__`
+         vem preenchido normalmente com o caminho completo.
+      2. Alt+P no Text Editor do Blender: mesmo com o arquivo aberto do
+         disco, `__file__` costuma vir como string vazia (quirk do
+         Blender) em vez de lançar `NameError` — nesse caso usamos
+         `bpy.data.texts[...].filepath`, que é o caminho real do arquivo.
+      3. Nenhuma das opções acima disponível: usa o diretório de trabalho
+         atual como último recurso.
+    """
+    caminho_file = globals().get("__file__") or ""
+    if caminho_file:
+        return os.path.dirname(os.path.abspath(caminho_file))
+
+    texto = bpy.data.texts.get(nome_do_arquivo)
+    if texto is not None and texto.filepath:
+        return os.path.dirname(bpy.path.abspath(texto.filepath))
+
+    return os.getcwd()
+
+
+SCRIPT_DIR = obter_diretorio_do_script("02_geracao_dataset_sintetico.py")
 SCRIPT1_PATH = os.path.join(SCRIPT_DIR, "01_configuracao_da_cena.py")
 
 # --------------------------------------------------------------------------
