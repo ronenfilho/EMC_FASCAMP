@@ -48,17 +48,18 @@ abaixo).
 
 ## Notas técnicas
 
-- **`__file__` vazio ao rodar pelo Text Editor**: `01b_visualizar_render_estudio.py`
-  e `02_geracao_dataset_sintetico.py` localizam o Script 1 na mesma pasta
-  via `__file__`. Isso funciona direto no modo headless, mas ao rodar via
-  Alt+P no Text Editor do Blender — mesmo tendo aberto o arquivo do disco
-  (não colado) — `__file__` frequentemente vem como string vazia (quirk
-  do Blender), e não `NameError`. Combinado com o Blender iniciado pelo
-  Finder/Dock usando `/` como diretório de trabalho, isso resultava em
-  tentar abrir `/01_configuracao_da_cena.py`. A função
-  `obter_diretorio_do_script()` cobre esse caso consultando
-  `bpy.data.texts[...].filepath` (o caminho real do arquivo aberto) antes
-  de cair para `os.getcwd()`.
+- **`__file__` não é o caminho do arquivo ao rodar pelo Text Editor**:
+  `01b_visualizar_render_estudio.py` e `02_geracao_dataset_sintetico.py`
+  localizam o Script 1 na mesma pasta. No modo headless, `__file__` é o
+  caminho completo de verdade. Mas ao rodar via Alt+P no Text Editor do
+  Blender — mesmo com o arquivo aberto do disco (não colado) — `__file__`
+  vale sempre `"/" + nome_do_bloco_de_texto` (ex.:
+  `/02_geracao_dataset_sintetico.py`), **nunca** o caminho real em disco.
+  Confiar nele fazia o script sempre calcular `/` como diretório e tentar
+  abrir `/01_configuracao_da_cena.py`. A função `obter_diretorio_do_script()`
+  agora consulta primeiro `bpy.data.texts[...].filepath` (o caminho real
+  do arquivo aberto, validado com `os.path.isfile`) e só usa `__file__`
+  como alternativa para o modo headless.
 - **CUDA vs. Metal**: a especificação original pede GPU Compute "caso haja
   suporte a CUDA" (cenário típico com GPU NVIDIA). Nesta máquina (Mac com
   GPU Apple Silicon) o backend correto do Cycles é **METAL**, não CUDA —

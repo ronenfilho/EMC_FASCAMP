@@ -38,23 +38,30 @@ from mathutils import Color, Euler
 def obter_diretorio_do_script(nome_do_arquivo):
     """Descobre a pasta onde este script está salvo em disco.
 
-    Cobre três formas de execução:
-      1. Headless (`blender --background --python arquivo.py`): `__file__`
-         vem preenchido normalmente com o caminho completo.
-      2. Alt+P no Text Editor do Blender: mesmo com o arquivo aberto do
-         disco, `__file__` costuma vir como string vazia (quirk do
-         Blender) em vez de lançar `NameError` — nesse caso usamos
-         `bpy.data.texts[...].filepath`, que é o caminho real do arquivo.
-      3. Nenhuma das opções acima disponível: usa o diretório de trabalho
+    Cobre três formas de execução, em ordem de confiabilidade:
+      1. Alt+P no Text Editor do Blender, com o arquivo aberto do disco
+         (não colado): `bpy.data.texts[...].filepath` tem o caminho real.
+         Damos prioridade a essa fonte porque, dentro do Blender, `__file__`
+         NÃO é o caminho do arquivo — é sempre `"/" + nome_do_texto`
+         (ex.: `/02_geracao_dataset_sintetico.py`), mesmo quando o texto
+         foi aberto do disco corretamente. Confiar nele primeiro faria o
+         script sempre "achar" a raiz do sistema (`/`) como diretório.
+      2. Headless (`blender --background --python arquivo.py`): aqui sim
+         `__file__` é o caminho completo de verdade (não há bloco de
+         texto envolvido), então validamos com `os.path.isfile` e usamos.
+      3. Nenhuma das opções acima disponível (ex.: conteúdo colado em um
+         bloco "Text" sem arquivo de origem): usa o diretório de trabalho
          atual como último recurso.
     """
-    caminho_file = globals().get("__file__") or ""
-    if caminho_file:
-        return os.path.dirname(os.path.abspath(caminho_file))
-
     texto = bpy.data.texts.get(nome_do_arquivo)
     if texto is not None and texto.filepath:
-        return os.path.dirname(bpy.path.abspath(texto.filepath))
+        caminho_real = bpy.path.abspath(texto.filepath)
+        if os.path.isfile(caminho_real):
+            return os.path.dirname(caminho_real)
+
+    caminho_file = globals().get("__file__") or ""
+    if caminho_file and os.path.isfile(os.path.abspath(caminho_file)):
+        return os.path.dirname(os.path.abspath(caminho_file))
 
     return os.getcwd()
 
